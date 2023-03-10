@@ -1,0 +1,90 @@
+<html>
+<body>
+<iframe id="chat_hidden" align="bottom" type="text" src="https://jpydev.net/last_msg.html" scrolling="no" width=0% height=0 frameborder=0 allowtransparency="true"></iframe>
+<input id="refresh chat" type="submit" onclick="chat_refresh()" value="Refresh Chat" style="margin-bottom:0px;margin-top:0px"></input>
+<br></br>
+<iframe id="chat" align="top" type="text" src="https://jpydev.net/irc_chat.html" scrolling="yes" width=100% height=500 frameborder=1 allowtransparency="true"></iframe>
+<script>
+function chat_refresh() {
+    var f = document.getElementById('chat');
+    f.contentWindow.location.refresh()
+    f.src=f.src;
+}
+function check_msg() {
+  var f = document.getElementById('chat_hidden');
+  f.contentWindow.location.refresh()
+  f.src=f.src
+}
+function chat_init() {
+    var last_msg = document.getElementById("chat_hidden").contentWindow.document.body.innerText
+    var int = self.setInterval(function () {
+      rap_checksong()
+      var last_msg = document.getElementById("chat_hidden").contentWindow.document.body.innerText
+      if (check_msg !== last_msg) {
+        check_msg = last_msg
+        chat_refresh()
+      }
+    }, 2500);
+}
+window.onfocus = function () { 
+  chat_refresh()
+}; 
+</script>
+<form method="POST" action="/chat">
+
+<textarea id="txtArea" name="Msg" placeholder="" maxlength="256" style="height:50px;width:100%;margin-bottom:0px;color:white;background-color:rgb(25,25,25);" value="{% if chat %}{{chat}}{% else %}{{''}}{% endif %}"></textarea>
+<br></br>
+<input id="submit" type="submit" value="Send Message" style="margin-bottom:0px;margin-top:0px"></input><br></br>
+<input id="username" name="Username" maxlength="16" style="margin-bottom:0px;margin-top:0px" placeholder="username" value="{% if user %}{{user}}{% else %}{{''}}{% endif %}"></input><br></br>
+<input id="password" name="Password" maxlength="16" style="margin-bottom:0px;margin-top:0px" placeholder="password" type="password" value="{% if pw %}{{pw}}{% else %}{{''}}{% endif %}"></input>
+<span style="color:red">{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+{% block body %}{% endblock %}
+</span>
+<p>Username/Password must be unique.  Remember your password because I'm not resetting anything.  Leave blank to chat anonymously.</p>
+<p>This should go without saying, but DO NOT use this password anywhere else.</p>
+
+</form>
+<script>
+var input = document.getElementById("txtArea");
+input.addEventListener("keypress", function(event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    document.getElementById("submit").click();
+    chat_refresh();
+  }
+});
+var username_input = document.getElementById("username");
+username_input.addEventListener("keypress", function(event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    document.getElementById('password').focus();
+  }
+});
+var pw_input = document.getElementById("password");
+pw_input.addEventListener("keypress", function(event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    document.getElementById('txtArea').focus();
+  }
+});
+</script>
+</body>
+<style>
+p {
+  margin-bottom: 0px;
+  margin-top: 0px;
+  color: #ffffff;
+}
+body {
+  background-color: rgb(25,25,25);
+}
+</style>
+</html>
