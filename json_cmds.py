@@ -1,6 +1,6 @@
 import json
 
-users = 'users.json'  # recommend not keeping this in the root folder of your website
+users = 'B:/PyCharm/FakeyWebIRC/users.json'  # recommend not keeping this in the root folder of your website
 
 
 def get_json():

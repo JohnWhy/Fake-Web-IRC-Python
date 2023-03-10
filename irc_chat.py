@@ -49,13 +49,13 @@ def send_msg(username, chat):
     now = datetime.datetime.now()
     timestamp = now.strftime('[%Y-%m-%d %H:%M:%S] ')
     msg = get_style(timestamp,username)+clean(chat)
-    overwrite = open('last_msg.html','w')  # update last msg for iframe refresh javascript code
+    overwrite = open('templates/last_msg.html','w')  # update last msg for iframe refresh javascript code
     overwrite.write('<p>'+msg+'</p>')
     overwrite.close()
-    read = open('irc_chat.html','r+')  # get the current msg list
+    read = open('templates/irc_chat.html','r+')  # get the current msg list
     rlist = read.readlines()
     read.close()
-    rwrite = open('irc_chat.html','w')  # open for writing
+    rwrite = open('templates/irc_chat.html','w')  # open for writing
     rlist.insert(rlist.index('</dl>\n'),"<p>"+str(msg)+'</p>\n')  # write the msg user sent to the file
     for i in rlist:
         rwrite.write(i)  # save changes
