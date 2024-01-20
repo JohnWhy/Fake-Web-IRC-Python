@@ -74,10 +74,9 @@ def log(d):
 
 
 @socketio.on('my_event')
-def load_chat(data):
+def load_chat():
     f = open('irc_chat.json','r')
     j = json.load(f)
-    f.close()
     for i in j:
         emit('send_msg', i)
 
