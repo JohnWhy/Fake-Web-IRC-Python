@@ -1,17 +1,30 @@
-from flask import Flask, render_template, request, flash
+from flask import Blueprint, Flask, render_template, request, flash, session, redirect, url_for
+from flask_socketio import SocketIO, emit
+from threading import Lock
 from json_cmds import *
 import re
 import hashlib
 import datetime
+import logging
+LOG_FOLDER = 'logs/'
+log_timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H')
+logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s",
+                    level=logging.DEBUG,
+                    handlers=[
+                        logging.FileHandler(LOG_FOLDER+log_timestamp + "_IRC_chat.log"),
+                        logging.StreamHandler()
+                    ]
+                    )
 
+async_mode = None
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '---'  # change
+auth = Blueprint('auth', __name__)
+# app.config['SECRET_KEY'] = '---'  # change
+socketio = SocketIO(app, async_mode=async_mode)
 
-
-session_tokens = {}
-# keeps info on who is already authenticated
-# probably should clean this up if session is inactive for too long...
+thread = None
+thread_lock = Lock()
 
 
 def clean(string):
@@ -45,59 +58,57 @@ def get_style(timestamp,username):
     return '<span style="color:'+color_val+';">'+info+': </span>'
 
 
-def send_msg(username, chat):
+def log(d):
+    msg = '<br>' + d['info'] + d['text']+'\n'
+    f = open('irc_chat.txt','a+')
+    f.write(msg)
+    f.close()
+
+
+@socketio.on('send_msg')
+def handle_message(data):
+    text = str(data['text'])
+    username = str(data['username'])
+    password = str(data['password'])
     now = datetime.datetime.now()
     timestamp = now.strftime('[%Y-%m-%d %H:%M:%S] ')
-    msg = get_style(timestamp,username)+clean(chat)
-    overwrite = open('templates/last_msg.html','w')  # update last msg for iframe refresh javascript code
-    overwrite.write('<p>'+msg+'</p>')
-    overwrite.close()
-    read = open('templates/irc_chat.html','r+')  # get the current msg list
-    rlist = read.readlines()
-    read.close()
-    rwrite = open('templates/irc_chat.html','w')  # open for writing
-    rlist.insert(rlist.index('</dl>\n'),"<p>"+str(msg)+'</p>\n')  # write the msg user sent to the file
-    for i in rlist:
-        rwrite.write(i)  # save changes
-    rwrite.close()  # close html file
-
-
-@app.route('/chat', methods=['GET', 'POST'])
-def web_login():
-    global session_tokens
-    if request.method == 'POST':
-        username = request.form['Username'][:16]
-        password = request.form['Password'][:16]
-        chat = request.form['Msg'][:256]
-        if chat != '':  # if chat is blank, we don't want to send anything
-            if username == '':  # this controls anonymous posting and maintains same anonymous tag during session
-                token = get_token(username, get_hash('anon'))
-                username = "anonymous_"+str(token)[0:2]
-                session_tokens[username] = token
-                send_msg(username, chat)
-                return render_template('chat.html', user=username, pw=token)  # keep generated name/token on re-render
-            else:
-                if username in session_tokens.keys():
-                    if session_tokens[username] == password:
-                        send_msg(username, chat)
-                        return render_template('chat.html', user=username, pw=password)  # keep username/pw on re-render
-                        # note: at this point the password is actually the token since it's matching to the sessions.
-                result = login(username, get_hash(password))
-                if result == False:
-                    flash('Bad password for account.')  # if pw is bad
-                    return render_template('chat.html', chat=chat, user=username)  # keep whatever was written+username
-                else:
-                    token = get_token(username, get_hash(password))
-                    session_tokens[username] = token
-                    send_msg(username, chat)
-                    return render_template('chat.html', user=username, pw=token)  # keep username/token on re-render
+    if text != '':
+        if username == '':
+            username = "Anonymous"
+            userinfo = get_style(timestamp, username)
+            msg = clean(text)
+            d = {'info': userinfo, 'text': msg}
+            emit('send_msg', d, broadcast=True)
+            logging.info(username+': '+msg)
+            log(d)
         else:
-            flash('No message entered.')  # flash that no message is entered
-            return render_template('chat.html', user=username, pw=password)  # keep user/pass if entered
-    return render_template('chat.html')
+            result = login(username, get_hash(password))
+            if result == False:
+                emit('send_msg', {'info': '<span style="color:red;">Bad Password on Login</span>', 'text': ''})  # if pw is bad
+                logging.info('Bad Password on Login: '+str(username))
+            else:
+                userinfo = get_style(timestamp, username)
+                msg = clean(text)
+                d = {'info': userinfo, 'text': msg}
+                emit('send_msg', d, broadcast=True)
+                logging.info(username+': '+msg)
+                log(d)
 
 
-if __name__ == "__main__":
-    # uncomment if you want ssl and have a cert/pkey
-    # context = ('cert.pem','pkey.pem')
-    app.run(host='0.0.0.0') #, ssl_context=context)
+@app.route('/chat')
+def chat():
+    prev_msgs = ''
+    f = open('irc_chat.txt','r')
+    for i in f:
+        prev_msgs += i
+    return render_template('chat.html', async_mode=socketio.async_mode, prev_msgs=prev_msgs)
+
+
+if __name__ == '__main__':
+    socketio.run(app, allow_unsafe_werkzeug=True)
+
+
+# if __name__ == "__main__":
+#     # uncomment if you want ssl and have a cert/pkey
+#     # context = ('cert.pem','pkey.pem')
+#     app.run(host='0.0.0.0') #, ssl_context=context)

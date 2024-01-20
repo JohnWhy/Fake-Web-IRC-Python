@@ -1,88 +1,88 @@
+<!DOCTYPE HTML>
 <html>
-<body>
-<iframe id="chat_hidden" align="bottom" type="text" src="./last_msg.html" scrolling="no" width=0% height=0 frameborder=0 allowtransparency="true"></iframe>
-<input id="refresh chat" type="submit" onclick="chat_refresh()" value="Refresh Chat" style="margin-bottom:0px;margin-top:0px"></input>
-<br></br>
-<iframe id="chat" align="top" type="text" src="./irc_chat.html" scrolling="yes" width=100% height=500 frameborder=1 allowtransparency="true"></iframe>
-<script>
-function chat_refresh() {
-    var f = document.getElementById('chat');
-    f.src=f.src;
-}
-function check_msg() {
-  var f = document.getElementById('chat_hidden');
-  f.src=f.src
-}
-function chat_init() {
-    var last_msg = document.getElementById("chat_hidden").contentWindow.document.body.innerText
-    var int = self.setInterval(function () {
-      rap_checksong()
-      var last_msg = document.getElementById("chat_hidden").contentWindow.document.body.innerText
-      if (check_msg !== last_msg) {
-        check_msg = last_msg
-        chat_refresh()
-      }
-    }, 2500);
-}
-window.onfocus = function () { 
-  chat_refresh()
-}; 
-</script>
-<form method="POST" action="/chat">
+<head>
+  <body>
+    <div id="log" style="width: 100%; border: 1px solid black; height: 300px; overflow:auto;overflow-y: scroll;"></div>
 
-<textarea id="txtArea" name="Msg" placeholder="" maxlength="256" style="height:50px;width:100%;margin-bottom:0px;color:white;background-color:rgb(25,25,25);" value="{% if chat %}{{chat}}{% else %}{{''}}{% endif %}"></textarea>
-<br></br>
-<input id="submit" type="submit" value="Send Message" style="margin-bottom:0px;margin-top:0px"></input><br></br>
-<input id="username" name="Username" maxlength="16" style="margin-bottom:0px;margin-top:0px" placeholder="username" value="{% if user %}{{user}}{% else %}{{''}}{% endif %}"></input><br></br>
-<input id="password" name="Password" maxlength="16" style="margin-bottom:0px;margin-top:0px" placeholder="password" type="password" value="{% if pw %}{{pw}}{% else %}{{''}}{% endif %}"></input>
-<span style="color:red">{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul class=flashes>
-    {% for message in messages %}
-      <li>{{ message }}</li>
-    {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
-{% block body %}{% endblock %}
-</span>
-<p>Username/Password must be unique.  Remember your password because I'm not resetting anything.  Leave blank to chat anonymously.</p>
-<p>This should go without saying, but DO NOT use this password anywhere else.</p>
-
-</form>
-<script>
-var input = document.getElementById("txtArea");
-input.addEventListener("keypress", function(event) {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    document.getElementById("submit").click();
-    chat_refresh();
-  }
-});
-var username_input = document.getElementById("username");
-username_input.addEventListener("keypress", function(event) {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    document.getElementById('password').focus();
-  }
-});
-var pw_input = document.getElementById("password");
-pw_input.addEventListener("keypress", function(event) {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    document.getElementById('txtArea').focus();
-  }
-});
-</script>
+    <textarea id="txtarea" placeholder="" maxlength="256" style="height:50px;width:100%;margin-bottom:0px;color:white;background-color:rgb(25,25,25);" value="{% if chat %}{{chat}}{% else %}{{''}}{% endif %}"></textarea>
+    <br>
+    <form id="sendmsg" method="POST" action="#">
+        <input id="submit" type="submit" value="Send Message">
+    </form>
+    <input id="username" maxlength="16" style="margin-bottom:0px;margin-top:0px" placeholder="username" value="{% if user %}{{user}}{% else %}{{''}}{% endif %}"></input><br></br>
+    <input id="password" maxlength="16" style="margin-bottom:0px;margin-top:0px" placeholder="password" type="password" value="{% if pw %}{{pw}}{% else %}{{''}}{% endif %}"></input>
+    <p>Username/Password must be unique.  Remember your password because I'm not resetting anything.  Leave blank to chat anonymously.</p>
+    <p>This should go without saying, but DO NOT use this password anywhere else.</p>
 </body>
-<style>
-p {
-  margin-bottom: 0px;
-  margin-top: 0px;
-  color: #ffffff;
-}
-body {
-  background-color: rgb(25,25,25);
-}
-</style>
+    <title>Flask-SocketIO Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            // Connect to the Socket.IO server.
+            // The connection URL has the following format, relative to the current page:
+            //     http[s]://<domain>:<port>[/<namespace>]
+            var socket = io();
+
+            // Event handler for new connections.
+            // The callback function is invoked when a connection with the
+            // server is established.
+            socket.on('connect', function() {
+                socket.emit('my_event', {data: 'I\'m connected!'});
+            });
+
+            function scrollToBottom(el) {
+              el.scrollTop = el.scrollHeight;
+            }
+
+            // response received from server is handled here
+            socket.on('send_msg', function(msg) {
+                $('#log').append('<br>' + msg.info + $('<div/>').text(msg.text).html());
+                var consoleDiv = document.getElementById('log');
+                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            })
+
+            // Handlers for the different forms in the page.
+            // These accept data from the user and send it to the server in a
+            // variety of ways
+            $('form#sendmsg').submit(function(event) {
+                const txt = document.querySelector('#txtarea').value
+                const usr = document.querySelector('#username').value
+                const pw = document.querySelector('#password').value
+                socket.emit('send_msg', {text: txt, username: usr, password: pw});
+                return false;
+            });
+            $('form#login').submit(function(event) {
+                const usr = document.querySelector('#username').value
+                const pw = document.querySelector('#password').value
+                socket.emit('log_in', {username: usr, password: pw});
+                return false;
+            });
+        });
+
+        var input = document.getElementById("txtarea");
+            input.addEventListener("keypress", function(event) {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                document.getElementById("submit").click();
+                document.getElementById("txtarea").value = ''
+              }
+            });
+            var username_input = document.getElementById("username");
+            username_input.addEventListener("keypress", function(event) {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                document.getElementById('password').focus();
+              }
+            });
+            var pw_input = document.getElementById("password");
+            pw_input.addEventListener("keypress", function(event) {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                document.getElementById('txtarea').focus();
+              }
+});
+    </script>
+</head>
+
 </html>
