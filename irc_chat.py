@@ -6,6 +6,7 @@ import re
 import hashlib
 import datetime
 import logging
+import json
 LOG_FOLDER = 'logs/'
 log_timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H')
 logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s",
@@ -59,10 +60,27 @@ def get_style(timestamp,username):
 
 
 def log(d):
-    msg = '<br>' + d['info'] + d['text']+'\n'
-    f = open('irc_chat.txt','a+')
-    f.write(msg)
+    try:
+        f = open('irc_chat.json','r')
+        j = json.load(f)
+        f.close()
+    except:
+        j = []
+        pass
+    f = open('irc_chat.json', 'w')
+    j.append(d)
+    json.dump(j, f)
     f.close()
+
+
+@socketio.on('my_event')
+def load_chat(data):
+    f = open('irc_chat.json','r')
+    j = json.load(f)
+    f.close()
+    for i in j:
+        emit('send_msg', i)
+
 
 
 @socketio.on('send_msg')
@@ -84,7 +102,8 @@ def handle_message(data):
         else:
             result = login(username, get_hash(password))
             if result == False:
-                emit('send_msg', {'info': '<span style="color:red;">Bad Password on Login</span>', 'text': ''})  # if pw is bad
+                emit('send_msg', {'info': '<span style="color:red;">Bad Password on Login</span>', 'text': ''})
+                # if pw is bad
                 logging.info('Bad Password on Login: '+str(username))
             else:
                 userinfo = get_style(timestamp, username)
@@ -97,11 +116,8 @@ def handle_message(data):
 
 @app.route('/chat')
 def chat():
-    prev_msgs = ''
-    f = open('irc_chat.txt','r')
-    for i in f:
-        prev_msgs += i
-    return render_template('chat.html', async_mode=socketio.async_mode, prev_msgs=prev_msgs)
+    return render_template('chat.html', async_mode=socketio.async_mode)
+
 
 
 if __name__ == '__main__':
