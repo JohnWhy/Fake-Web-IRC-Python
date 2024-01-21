@@ -7,12 +7,15 @@
     <textarea id="txtarea" placeholder="" maxlength="256" style="height:50px;width:100%;margin-bottom:0px;color:white;background-color:rgb(25,25,25);" value="{% if chat %}{{chat}}{% else %}{{''}}{% endif %}"></textarea>
     <br>
     <form id="sendmsg" method="POST" action="#">
-        <input id="submit" type="submit" value="Send Message">
+        <input id="submit" type="submit" value="Send Message" onclick="clear_txtarea()">
     </form>
     <input id="username" maxlength="16" style="margin-bottom:0px;margin-top:0px" placeholder="username" value="{% if user %}{{user}}{% else %}{{''}}{% endif %}"></input><br></br>
     <input id="password" maxlength="16" style="margin-bottom:0px;margin-top:0px" placeholder="password" type="password" value="{% if pw %}{{pw}}{% else %}{{''}}{% endif %}"></input>
     <p>Username/Password must be unique.  Remember your password because I'm not resetting anything.  Leave blank to chat anonymously.</p>
     <p>This should go without saying, but DO NOT use this password anywhere else.</p>
+    <p id="users">Users Online: 0</p>
+    <p>Recently Online:</p>
+    <p id="usernames"></p>
 </body>
     <title>Flask-SocketIO Test</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
@@ -28,7 +31,7 @@
             // The callback function is invoked when a connection with the
             // server is established.
             socket.on('connect', function() {
-                socket.emit('my_event', {data: 'I\'m connected!'});
+                socket.emit('my_event', {data: 'Connected!'});
             });
 
             function scrollToBottom(el) {
@@ -42,6 +45,13 @@
                 consoleDiv.scrollTop = consoleDiv.scrollHeight;
             })
 
+            socket.on('update_users', function(msg) {
+                document.querySelector('#users').innerText = msg.value
+            })
+            socket.on('update_user_list', function(msg) {
+                document.querySelector('#usernames').innerText = msg.value
+            })
+
             // Handlers for the different forms in the page.
             // These accept data from the user and send it to the server in a
             // variety of ways
@@ -50,6 +60,7 @@
                 const usr = document.querySelector('#username').value
                 const pw = document.querySelector('#password').value
                 socket.emit('send_msg', {text: txt, username: usr, password: pw});
+                document.getElementById("txtarea").value = '';
                 return false;
             });
             $('form#login').submit(function(event) {
@@ -65,7 +76,7 @@
               if (event.key === "Enter") {
                 event.preventDefault();
                 document.getElementById("submit").click();
-                document.getElementById("txtarea").value = ''
+
               }
             });
             var username_input = document.getElementById("username");
