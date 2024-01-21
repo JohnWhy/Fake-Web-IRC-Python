@@ -16,11 +16,12 @@ logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s",
                         logging.StreamHandler()
                     ]
                     )
+
 async_mode = None
 
 app = Flask(__name__)
 auth = Blueprint('auth', __name__)
-# app.config['SECRET_KEY'] = '---'  # change
+app.config['SECRET_KEY'] = '---'  # change
 socketio = SocketIO(app, async_mode=async_mode)
 
 thread = None
@@ -64,14 +65,14 @@ def get_token(username, hashed_pw):
     return token
 
 
-def get_style(timestamp,username):
+def get_style(timestamp,username,identifier):
     # can be adjusted or built out to allow custom colors for different users
     # this currently makes PPR user Red (admin acc)
-    if username=='PPR' or username=='ppr':
+    if username.lower() == 'ppr' or username.lower() == 'captain kidd' or username.lower() == 'stim':
         color_val='Red'
     else:
         color_val='#337dff'  # default user color
-    info = timestamp+username
+    info = timestamp+identifier+username
     return '<span style="color:'+color_val+';">'+info+': </span>'
 
 
@@ -83,6 +84,8 @@ def log(d):
     except:
         j = []
         pass
+    new_id = str(int(j[-1]['id']) + 1)
+    d['id'] = new_id
     f = open('irc_chat.json', 'w')
     j.append(d)
     json.dump(j, f)
@@ -130,7 +133,6 @@ def load_chat(data):
         emit('update_user_list', {'value': user_list}, broadcast=True)
 
 
-
 @socketio.on('disconnect')
 def remove_user():
     global active_sessions, active_users, active_sids
@@ -163,8 +165,8 @@ def handle_message(data):
     timestamp = now.strftime('[%Y-%m-%d %H:%M:%S] ')
     if text != '':
         if username == '':
-            username = '['+active_sessions[request.remote_addr]['short_sid']+'] Anonymous'
-            userinfo = get_style(timestamp, username)
+            username = 'Anonymous'
+            userinfo = get_style(timestamp, username, '['+active_sessions[request.remote_addr]['short_sid']+'] ')
             msg = clean(text)
             d = {'info': userinfo, 'text': msg}
             emit('send_msg', d, broadcast=True)
@@ -181,8 +183,7 @@ def handle_message(data):
                 # if pw is bad
                 logging.info('Bad Password on Login: '+str(username))
             else:
-                username = '['+active_sessions[request.remote_addr]['short_sid']+'] '+username
-                userinfo = get_style(timestamp, username)
+                userinfo = get_style(timestamp, username, '['+active_sessions[request.remote_addr]['short_sid']+'] ')
                 msg = clean(text)
                 d = {'info': userinfo, 'text': msg}
                 emit('send_msg', d, broadcast=True)
@@ -199,8 +200,9 @@ def chat():
     return render_template('chat.html', async_mode=socketio.async_mode)
 
 
+
 if __name__ == '__main__':
-    socketio.run(app, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port='5000', ssl_context=('certs/cert.pem', 'certs/privkey.pem'))
 
 
 # if __name__ == "__main__":

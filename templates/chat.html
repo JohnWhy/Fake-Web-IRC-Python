@@ -1,23 +1,40 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-  <body>
+<link rel="apple-touch-icon" sizes="76x76" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+<link rel="manifest" href="/icons/manifest.json">
+<link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+<meta name="description" content="Pirate Punk FM">
+<body>
+<p>(( This is an In-Character IRC for <a target="_parent" href="https://redcountyrp.com/">Red County RP</a> ))</p>
+<h2><span style="color:#cb0800">(( Sending people to Forum PM/Discord DM you is METAGAMING and you will be punished for it moving forward. ))</span></h2>
+<p id="users">Users Online: 0</p>
     <div id="log" style="width: 100%; border: 1px solid black; height: 300px; overflow:auto;overflow-y: scroll;"></div>
 
-    <textarea id="txtarea" placeholder="" maxlength="256" style="height:50px;width:100%;margin-bottom:0px;color:white;background-color:rgb(25,25,25);" value="{% if chat %}{{chat}}{% else %}{{''}}{% endif %}"></textarea>
+    <textarea id="txtarea" placeholder="" maxlength="256" style="height:50px;width:100%;margin-bottom:0px;color:white;background-color:rgb(25,25,25);"></textarea>
     <br>
     <form id="sendmsg" method="POST" action="#">
-        <input id="submit" type="submit" value="Send Message" onclick="clear_txtarea()">
+        <input id="submit" type="submit" value="Send Message">
     </form>
-    <input id="username" maxlength="16" style="margin-bottom:0px;margin-top:0px" placeholder="username" value="{% if user %}{{user}}{% else %}{{''}}{% endif %}"></input><br></br>
-    <input id="password" maxlength="16" style="margin-bottom:0px;margin-top:0px" placeholder="password" type="password" value="{% if pw %}{{pw}}{% else %}{{''}}{% endif %}"></input>
-    <p>Username/Password must be unique.  Remember your password because I'm not resetting anything.  Leave blank to chat anonymously.</p>
-    <p>This should go without saying, but DO NOT use this password anywhere else.</p>
-    <p id="users">Users Online: 0</p>
+    <input id="username" maxlength="16" style="margin-bottom:0px;margin-top:0px" placeholder="username"><br>
+    <input id="password" maxlength="16" style="margin-bottom:0px;margin-top:0px" placeholder="password" type="password">
+    <p>Username/Password must be unique.<br />Remember your password because I'm not resetting anything.<br />Leave blank to chat anonymously.
+    <br />Once a username/password combination is set, no one else can take it.
+    <br />This should go without saying, but DO NOT use this password anywhere else.</p>
+    <p><span style="color:Red;">Red Name = Site Admin</span>
+    <br /><span style="color:#337dff;">Blue Name = User</span></p>
+    <p>Remember, staying anonymous is key, do not use your real name on here.
+    <br />Use burner phones if you're setting up a deal!
+    <br />Need a burner? Ask around in chat.</p>
+
     <p>Recently Online:</p>
     <p id="usernames"></p>
+
 </body>
-    <title>Flask-SocketIO Test</title>
+    <title>Pirate Punk IRC</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
     <script type="text/javascript" charset="utf-8">
@@ -31,7 +48,7 @@
             // The callback function is invoked when a connection with the
             // server is established.
             socket.on('connect', function() {
-                socket.emit('my_event', {data: 'Connected!'});
+                socket.emit('connection', {data: "New Connection!"});
             });
 
             function scrollToBottom(el) {
@@ -40,7 +57,7 @@
 
             // response received from server is handled here
             socket.on('send_msg', function(msg) {
-                $('#log').append('<br>' + msg.info + $('<div/>').text(msg.text).html());
+                $('#log').append('<br id="msg_' + msg.id + '" value="msg">' + msg.info + $('<div/>').text(msg.text).html());
                 var consoleDiv = document.getElementById('log');
                 consoleDiv.scrollTop = consoleDiv.scrollHeight;
             })
@@ -60,7 +77,6 @@
                 const usr = document.querySelector('#username').value
                 const pw = document.querySelector('#password').value
                 socket.emit('send_msg', {text: txt, username: usr, password: pw});
-                document.getElementById("txtarea").value = '';
                 return false;
             });
             $('form#login').submit(function(event) {
@@ -76,7 +92,7 @@
               if (event.key === "Enter") {
                 event.preventDefault();
                 document.getElementById("submit").click();
-
+                document.getElementById("txtarea").value = ''
               }
             });
             var username_input = document.getElementById("username");
@@ -95,5 +111,30 @@
 });
     </script>
 </head>
+<style>
+@font-face {font-family: LastCall; src: url('fonts/TheLastCall-Regular.ttf');}
+@font-face {font-family: Punk; src: url('fonts/Punk.ttf');}
+@font-face {font-family: the_font; src: url('fonts/SpecialElite.ttf');}
 
+p {
+color: rgb(255,255,255);
+}
+div {
+color: rgb(255,255,255);
+}
+a {
+text-decoration: none;
+}
+a:link, a:visited {
+    color: #cb0800;
+}
+a:hover {
+    color: #767676;
+}
+body {
+    /*background-image: url("https://i.imgur.com/rxLWDuK.png");*/
+    /*background-image: url("https://i.imgur.com/mpmMxry.gif");*/
+    background-color: rgb(25,25,25);
+}
+</style>
 </html>
